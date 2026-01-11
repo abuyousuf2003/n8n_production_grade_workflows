@@ -1,0 +1,250 @@
+{
+  "name": "Youtube_transcript to Linkedin_post",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/starvibe~youtube-video-transcript/run-sync-get-dataset-items?token=apify_api_bs6cocmJOe55J680mGuy84DxrHaEWk3Kp60P",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"youtube_url\": \n        \"{{ $json['Full URL'] }}\"\n    \n}",
+        "options": {}
+      },
+      "id": "029a835c-9ccc-4ebe-b0f0-21a7e3747c35",
+      "name": "Request YouTube Transcript",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        176,
+        256
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {},
+      "id": "0f1dff94-2f35-456f-816e-3ae2e3da23d5",
+      "name": "No Operation, do nothing",
+      "type": "n8n-nodes-base.noOp",
+      "position": [
+        1312,
+        256
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "formTitle": "Summarize YouTube video's",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Full URL"
+            }
+          ]
+        },
+        "options": {
+          "path": "ddd"
+        }
+      },
+      "id": "f45af85f-38e8-4ca1-9a33-c11e523b774b",
+      "name": "YouTube video URL",
+      "type": "n8n-nodes-base.formTrigger",
+      "position": [
+        -32,
+        256
+      ],
+      "webhookId": "3dc17600-3020-40b1-be8f-e65ef45269b6",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "model": "llama-3.1-8b-instant",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        624,
+        448
+      ],
+      "id": "231aa6e9-5e68-4076-b230-dbd65f0ddbd2",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "1SZOrvFXVxhoc3Hm",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "02e7b6b6-e51c-41c5-ac0d-d639323da419",
+              "name": "text",
+              "value": "={{ $json.transcript.map(t => t.text).join(' ') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        384,
+        256
+      ],
+      "id": "52fef923-c0a1-45c5-8363-0469e55d0d20",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "chunkSize": 12000,
+        "chunkOverlap": 1000,
+        "options": {
+          "summarizationMethodAndPrompts": {
+            "values": {
+              "combineMapPrompt": "=You are summarizing part of a YouTube transcript.\n\nExtract:\n- Key ideas\n- Actionable steps\n- Any numbers, frameworks, or templates mentioned\n\nText:\n\"{{ $json.text }}\"\n\nSUMMARY:\n",
+              "prompt": "=Combine the summaries below into a clear, structured final summary.\n\nOutput format:\n- Short overview (2–3 lines)\n- Bullet points of the main strategies\n- Practical takeaways someone can apply immediately\n\nText:\n\"{{ $json.text }}\"\n\nFINAL SUMMARY:\n"
+            }
+          }
+        }
+      },
+      "id": "53c587ee-b69b-4dc5-990c-ac6cecd664ea",
+      "name": "Summarization of a YouTube script",
+      "type": "@n8n/n8n-nodes-langchain.chainSummarization",
+      "position": [
+        624,
+        256
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a LinkedIn content strategist.\n\nYour task: Take the following summary and generate a LinkedIn post idea.\n\nRules:\n1. Start with a strong hook in the first 1-2 lines to grab attention.\n2. Write in a founder/real-experience style, as if sharing a lesson learned or actionable insight.\n3. Keep paragraphs short and easy to skim (2-3 lines max).\n4. Include at least one actionable tip, insight, or framework.\n5. Avoid emojis.\n6. End with a soft question CTA to encourage comments or discussion (e.g., \"Have you tried this approach before?\").\n7. Optionally, suggest 2-3 relevant hashtags at the end.\n8. Focus on the audience: [Insert your target audience here, e.g., marketing managers, SaaS founders, HR professionals].\n\nSummary:\n{{ $json.response.text }}\n\nOutput:\n- A polished LinkedIn post based on the summary.\n- Suggested hashtags (3 max).\n",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        976,
+        256
+      ],
+      "id": "ff3e4e42-1ea2-44e4-b19f-011e8ed2cd33",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        912,
+        464
+      ],
+      "id": "acaa2e95-5a4b-4335-86bc-557b2b9ad16f",
+      "name": "Groq Chat Model1",
+      "credentials": {
+        "groqApi": {
+          "id": "1SZOrvFXVxhoc3Hm",
+          "name": "Groq account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "YouTube video URL": {
+      "main": [
+        [
+          {
+            "node": "Request YouTube Transcript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Request YouTube Transcript": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Summarization of a YouTube script",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Summarization of a YouTube script",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarization of a YouTube script": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "269b1fef-c350-40f7-bb4e-91e77bf1192f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8305720195247de0575a417f3dcd72396cd9a92cbb9ce533f7706050bd18f23d"
+  },
+  "id": "AQjIiabu31o61BrnjxMZz",
+  "tags": []
+}
